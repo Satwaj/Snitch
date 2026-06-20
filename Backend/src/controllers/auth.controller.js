@@ -59,19 +59,25 @@ export const register = async (req, res) => {
     }
 }
 
+export const login = async (req, res) => {
+    const { email, password } = req.body;
 
-export const login = async (req,res)=>{
+    const user = await userModel.findOne({ email }).select("+password")
 
-    const {email,password} = req.body
-
-    try {
-        const user = await userModel.findOne({
-            email:email
-
-        })
+    if (!user) {
+        return res.status(400).json({ message: "Invalid credentials" });
     }
-    catch (error) {
-        console.log(error)
-        return res.status(500).json({ message: "Server error" });
+
+    const isMatch = await user.comparePassword(password);
+
+    if (!isMatch) {
+        return res.status(400).json({ message: "Invalid credentials" });
     }
+
+    await sendTokenResponse(user, res, "User logged in successfully");
+}
+export const googleCallback = async (req, res) => {
+    console.log(req.user)
+
+    res.redirect("http://localhost:5173/")
 }

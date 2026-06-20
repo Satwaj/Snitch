@@ -1,1 +1,19 @@
-@import "tailwindcss"
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Public+Sans:wght@300;400;700;900&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #8b5a2b;
+  --color-on-primary: #ffffff;
+  --color-surface: #F5F5DC;
+  --color-on-surface: #2d241e;
+  --color-on-surface-variant: #5c4d40;
+  --color-outline-variant: #e0d5c1;
+  --color-accent: #FEFAE0;
+  --color-container: #F2E8CF;
+
+  --font-headline: "Public Sans", sans-serif;
+  --font-display: "Public Sans", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-label: "Public Sans", sans-serif;
+}
