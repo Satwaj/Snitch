@@ -15,7 +15,10 @@ function validateRequest(req,res,next){
 export const validateRegisterUser = [
     body("email")
         .isEmail().withMessage("Invalid email format"),
-  
+    body("contact")
+        .optional()
+        .isMobilePhone().withMessage("Invalid contact number")
+        .isLength({ min: 10, max: 15 }).withMessage("Contact number must be between 10 and 15 digits"),
     body("password")
         .isLength({ min: 6 }).withMessage("Password must be at least 6 characters long"),
     body("fullname")
