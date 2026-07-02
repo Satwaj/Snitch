@@ -1,7 +1,7 @@
 import express from "express";
 import {authenticateSeller} from "../middlewares/auth.middleware.js"
 import multer from "multer"
-import { createProduct,getSellerProducts ,getAllProducts} from "../controllers/product.controller.js";
+import { createProduct,getSellerProducts ,getAllProducts,getProductDetails} from "../controllers/product.controller.js";
 import { createProductValidator } from "../validators/product.validator.js";
 
 
@@ -60,6 +60,7 @@ router.get("/", getAllProducts)
  * @description Get product details by ID
  * @access Public
  */
+router.get("/detail/:id",getProductDetails)
 
 
 

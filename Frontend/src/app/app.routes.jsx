@@ -5,6 +5,7 @@ import CreateProduct from "../features/products/pages/createProduct"
 import Dashboard from "../features/products/pages/Dashboard"
 import Protected from "../features/auth/components/Protected"
 import Home from "../features/products/pages/Home"
+import Productdetail from "../features/products/pages/Productdetail"
 
 
 
@@ -20,6 +21,10 @@ import Home from "../features/products/pages/Home"
    {
      path: "/login",
      element: <Login />,
+   },
+   {
+    path:"/product/:productId",
+    element:<Productdetail/>
    },
    {
      path: "/seller",
