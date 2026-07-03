@@ -6,6 +6,7 @@ import Dashboard from "../features/products/pages/Dashboard"
 import Protected from "../features/auth/components/Protected"
 import Home from "../features/products/pages/Home"
 import Productdetail from "../features/products/pages/Productdetail"
+import SellerProductDetails from "../features/products/pages/SellerProductDetails"
 
 
 
@@ -46,6 +47,14 @@ import Productdetail from "../features/products/pages/Productdetail"
            </Protected>
          ),
        },
+       {
+         path: "/seller/product/:productId",
+         element: (
+           <Protected role="seller">
+             <SellerProductDetails />
+           </Protected>
+         )
+       }
      ],
    },
  ]);
