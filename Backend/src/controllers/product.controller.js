@@ -26,7 +26,18 @@ export async function createProduct(req, res) {
             currency: priceCurrency || "INR"
         },
         images,
-        seller: seller._id
+        seller: seller._id,
+        variants: [
+            {
+                images,
+                price: {
+                    amount: priceAmount,
+                    currency: priceCurrency || "INR"
+                },
+                stock: 10,
+                attributes: {}
+            }
+        ]
     })
 
 

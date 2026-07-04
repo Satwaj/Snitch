@@ -39,10 +39,15 @@ export const addToCart = async (req, res) => {
             })
         }
 
+
+
+
+
+
         await cartModel.findOneAndUpdate(
             { user: req.user._id, "items.product": productId, "items.variant": variantId },
             { $inc: { "items.$.quantity": quantity } },
-            { new: true }
+            { returnDocument: 'after' }
         )
 
         return res.status(200).json({
@@ -75,6 +80,9 @@ export const addToCart = async (req, res) => {
 
 
 
+const getCartDetails = async (userId) => {
+    return await cartModel.findOne({ user: userId }).populate("items.product");
+}
 
 export const getCart = async (req, res) => {
     const user = req.user

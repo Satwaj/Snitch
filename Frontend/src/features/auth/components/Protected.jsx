@@ -18,9 +18,7 @@ const Protected = ({ children, role = "buyer" }) => {
     return <Navigate to="/" />;
   }
 
-  return children
-  
-}
+  return children;
+};
 
 export default Protected;
-

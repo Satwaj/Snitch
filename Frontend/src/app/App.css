@@ -53,3 +53,40 @@
   --font-body: "Hanken Grotesk", sans-serif;
   --font-label: "Hanken Grotesk", sans-serif;
 }
+
+/* Custom Snitch Aesthetic Navigation Styles */
+.nav-link-effect {
+  position: relative;
+}
+.nav-link-effect::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.nav-link-effect:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.logo-hover {
+  transition: letter-spacing 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.logo-hover:hover {
+  letter-spacing: 0.12em;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
