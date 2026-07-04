@@ -27,6 +27,12 @@ export const incrementCartItemApi = async ({ productId, variantId }) => {
     return response.data
 }
 
+export const decrementCartItemApi = async ({ productId, variantId }) => {
+    const response = await cartApiInstance.patch(`/quantity/decrement/${productId}/${variantId}`)
+    return response.data
+}
+
+
 export const removeCartItem = async ({ productId, variantId }) => {
     const response = await cartApiInstance.delete(`/remove/${productId}/${variantId}`)
     return response.data

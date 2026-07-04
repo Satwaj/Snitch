@@ -167,8 +167,7 @@ const ProductDetail = () => {
                   notice.type === "error"
                     ? "rgba(255, 247, 245, 0.96)"
                     : "rgba(251, 249, 246, 0.96)",
-                borderColor:
-                  notice.type === "error" ? "#f0b4aa" : "#d0c5b5",
+                borderColor: notice.type === "error" ? "#f0b4aa" : "#d0c5b5",
                 color: "#1b1c1a",
               }}
             >
@@ -178,7 +177,9 @@ const ProductDetail = () => {
                   color: notice.type === "error" ? "#ba1a1a" : "#7A6E63",
                 }}
               >
-                {notice.type === "error" ? "Cart update failed" : "Added to cart"}
+                {notice.type === "error"
+                  ? "Cart update failed"
+                  : "Added to cart"}
               </p>
               <p className="mt-2 text-sm leading-relaxed">{notice.message}</p>
             </div>
@@ -410,7 +411,10 @@ const ProductDetail = () => {
                       });
 
                       if (result) {
-                        showNotice(`${product.title} was added to your cart.`, "success");
+                        showNotice(
+                          `${product.title} was added to your cart.`,
+                          "success",
+                        );
                       } else {
                         showNotice(
                           "The item was added locally, but the server request could not be confirmed.",

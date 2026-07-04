@@ -11,6 +11,7 @@ import {
     addItem as addItemApi,
     getCart,
     incrementCartItemApi,
+    decrementCartItemApi,
     removeCartItem,
 } from "../services/cart.api.js";
 
@@ -110,8 +111,15 @@ export const useCart = () => {
     );
 
     const handleDecrementCartItem = useCallback(
-        ({ productId, variantId }) => {
+        async ({ productId, variantId }) => {
             dispatch(decrementCartItem({ productId, variantId }));
+
+            try {
+                return await decrementCartItemApi({ productId, variantId });
+            } catch (error) {
+                console.error("Failed to decrement cart item", error);
+                return null;
+            }
         },
         [dispatch],
     );

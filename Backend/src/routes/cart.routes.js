@@ -1,7 +1,7 @@
 import express from "express";
 import {authenticateSeller,authenticateUser} from "../middlewares/auth.middleware.js"
-import { validateAddToCart,validateIncrementCartItemQuantity } from "../validators/cart.validator.js";
-import { addToCart,getCart,incrementCartItemQuantity,removeFromCart } from "../controllers/cart.controller.js";
+import { validateAddToCart,validateIncrementCartItemQuantity,validateDecrementCartItemQuantity } from "../validators/cart.validator.js";
+import { addToCart,getCart,incrementCartItemQuantity,decrementCartItemQuantity,removeFromCart } from "../controllers/cart.controller.js";
 
 
 
@@ -50,7 +50,7 @@ router.patch("/quantity/increment/:productId/:variantId",authenticateUser,valida
  * @argument productId - ID of the product to update
  * @argument variantId - ID of the variant to update
  */
-
+router.patch("/quantity/decrement/:productId/:variantId",authenticateUser,validateDecrementCartItemQuantity, decrementCartItemQuantity)
 
 
 /**
