@@ -1,7 +1,7 @@
 import express from "express";
 import {authenticateSeller,authenticateUser} from "../middlewares/auth.middleware.js"
-import { validateAddToCart } from "../validators/cart.validator.js";
-import { addToCart,getCart } from "../controllers/cart.controller.js";
+import { validateAddToCart,validateIncrementCartItemQuantity } from "../validators/cart.validator.js";
+import { addToCart,getCart,incrementCartItemQuantity,removeFromCart } from "../controllers/cart.controller.js";
 
 
 
@@ -41,8 +41,27 @@ router.get("/",authenticateUser, getCart)
  * @argument variantId - ID of the variant to update
  */
 
+router.patch("/quantity/increment/:productId/:variantId",authenticateUser,validateIncrementCartItemQuantity, incrementCartItemQuantity)
+
+/**
+ * @route PATCH /api/cart/quantity/decrement/:productId/:variantId
+ * @desc Decrement item quantity in cart by one
+ * @access Private
+ * @argument productId - ID of the product to update
+ * @argument variantId - ID of the variant to update
+ */
 
 
+
+/**
+ * @route DELETE /api/cart/remove/:productId/:variantId
+ * @desc Remove item from cart
+ * @access Private
+ * @argument productId - ID of the product to remove
+ * @argument variantId - ID of the variant to remove
+ */
+
+router.delete("/remove/:productId/:variantId",authenticateUser,validateIncrementCartItemQuantity, removeFromCart)
 
 /**
  * @route POST /api/cart/payment/create/order

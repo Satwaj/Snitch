@@ -1,288 +1,358 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router";
-import Navbar from "../../shared/components/Navbar";
+import { useEffect } from "react";
+import { useSelector } from "react-redux";
 import { useCart } from "../hook/useCart";
-import {} from "../services/cart.api";
+import { Link, useNavigate } from "react-router";
 
-// ── Ultra-Premium Stitch Checkout Slider ──
-const StitchSliderCheckout = ({ onComplete }) => {
-  const [position, setPosition] = useState(0);
-  const trackRef = React.useRef(null);
-  const isDragging = React.useRef(false);
-  const startX = React.useRef(0);
-
-  const handleStart = (clientX) => {
-    isDragging.current = true;
-    startX.current = clientX;
-  };
-
-  const handleMove = (clientX) => {
-    if (!isDragging.current) return;
-    const trackWidth = trackRef.current.offsetWidth;
-    const handleWidth = 56;
-    const maxMove = trackWidth - handleWidth - 8;
-    let move = clientX - startX.current;
-    move = Math.max(0, Math.min(move, maxMove));
-    setPosition(move);
-
-    if (move >= maxMove - 5) {
-      isDragging.current = false;
-      setPosition(maxMove);
-      onComplete();
-    }
-  };
-
-  const handleEnd = () => {
-    if (!isDragging.current) return;
-    isDragging.current = false;
-    setPosition(0);
-  };
-
-  React.useEffect(() => {
-    const handleGlobalMouseMove = (e) => handleMove(e.clientX);
-    const handleGlobalMouseUp = () => handleEnd();
-
-    if (isDragging.current) {
-      window.addEventListener("mousemove", handleGlobalMouseMove);
-      window.addEventListener("mouseup", handleGlobalMouseUp);
-    }
-    return () => {
-      window.removeEventListener("mousemove", handleGlobalMouseMove);
-      window.removeEventListener("mouseup", handleGlobalMouseUp);
-    };
-  }, [isDragging.current]);
-
-  return (
-    <div
-      ref={trackRef}
-      className="relative h-16 bg-[#111111] border border-black/10 flex items-center justify-center select-none cursor-pointer rounded-none"
-    >
-      <span className="text-[10px] font-bold tracking-[0.3em] text-white/70 uppercase">
-        {position > 180 ? "Release to confirm order" : "Slide to place order"}
-      </span>
-      <div
-        onMouseDown={(e) => handleStart(e.clientX)}
-        onTouchStart={(e) => handleStart(e.touches[0].clientX)}
-        onTouchMove={(e) => handleMove(e.touches[0].clientX)}
-        onTouchEnd={handleEnd}
-        style={{ transform: `translateX(${position}px)` }}
-        className="absolute left-1 top-1 bottom-1 w-14 bg-white text-black rounded-none flex items-center justify-center cursor-grab active:cursor-grabbing transition-transform duration-75 shadow-xl border border-black/5"
-      >
-        <span className="material-symbols-outlined text-[18px] font-bold">arrow_right_alt</span>
-      </div>
-    </div>
-  );
+/* ─── Inline styles & tokens matching the "Avenue Montaigne" design system ─── */
+const tokens = {
+  surface: "#fbf9f6",
+  surfaceLow: "#f5f3f0",
+  surfaceLowest: "#ffffff",
+  surfaceHigh: "#eae8e5",
+  surfaceHighest: "#e4e2df",
+  onSurface: "#1b1c1a",
+  onSurfaceVariant: "#4d463a",
+  secondary: "#7A6E63",
+  muted: "#B5ADA3",
+  primary: "#C9A96E",
+  primaryDark: "#745a27",
+  outlineVariant: "#d0c5b5",
+  outline: "#7f7668",
 };
 
 const Cart = () => {
+  const cartItems = useSelector((state) => state.cart.items);
+  const {
+    handleGetCart,
+    handleIncrementCartItem,
+    handleDecrementCartItem,
+    handleRemoveCartItem,
+  } = useCart();
   const navigate = useNavigate();
 
-  // Hook/Selectors
-  const { handleGetCart } = useCart();
-  const cartState = useSelector((state) => state.cart);
-  const cartItems = cartState?.items || [];
-  const user = useSelector((state) => state.auth.user);
-
-  // Local UI states
-  const [toasts, setToasts] = useState([]);
-  const [orderComplete, setOrderComplete] = useState(false);
-
-  // Toast helper
-  const triggerToast = (message) => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3000);
-  };
-
-  // Fetch cart
   useEffect(() => {
-    if (user) {
-      handleGetCart();
-    }
-  }, [user]);
+    void handleGetCart();
+  }, [handleGetCart]);
 
-  // Normalize cart items
-  const normalizedItems = useMemo(() => {
-    return cartItems.map((item) => {
-      const isPopulated = item.product && typeof item.product === "object";
-      return {
-        cartId: item._id,
-        productId: isPopulated ? item.product._id : item.product,
-        title: isPopulated ? item.product.title : "Product Item",
-        description: isPopulated ? item.product.description : "",
-        priceAmount: isPopulated ? (item.product.price?.amount || 0) : 0,
-        currency: isPopulated ? (item.product.price?.currency || "INR") : "INR",
-        quantity: item.quantity || 1,
-        variantId: item.variant,
-        imageUrl: isPopulated ? (item.product.images?.[0]?.url) : "",
-        selectedSize: item.selectedSize || "M",
-        selectedColor: item.selectedColor || "OATMEAL",
-      };
-    });
-  }, [cartItems]);
+  /* ─── Derived totals ─── */
+  const subtotal =
+    cartItems?.reduce((sum, item) => {
+      const qty = item.quantity ?? 1;
+      return sum + (item.price?.amount ?? 0) * qty;
+    }, 0) ?? 0;
 
-  // Total
-  const { subtotal, currencySymbol } = useMemo(() => {
-    let sub = 0;
-    let symbol = "₹";
-    if (normalizedItems.length > 0) {
-      sub = normalizedItems.reduce((acc, item) => acc + (item.priceAmount * item.quantity), 0);
-      symbol = normalizedItems[0].currency === "INR" ? "₹" : "$";
-    }
-    return { subtotal: sub, currencySymbol: symbol };
-  }, [normalizedItems]);
+  const freeShippingThreshold = 15000;
+  const shippingFree = subtotal >= freeShippingThreshold;
+  const totalPieces =
+    cartItems?.reduce((sum, item) => sum + (item.quantity ?? 1), 0) ?? 0;
 
-  // Actions
-  const handleRemove = async (item) => {
-    try {
-      await removeItemFromCart({ productId: item.productId, variantId: item.variantId });
-      await handleGetCart();
-      triggerToast(`Removed item from bag`);
-    } catch (error) {
-      console.error("Failed to remove item", error);
-    }
+  /* ─── Helpers ─── */
+  const getVariantDetails = (product, variantId) => {
+    if (!product?.variants || !variantId) return null;
+    return product.variants.find((v) => v._id === variantId) ?? null;
   };
 
-  const handleQuantityChange = async (item, newQty) => {
-    if (newQty <= 0) {
-      await handleRemove(item);
-      return;
-    }
-
-    try {
-      await updateItemQuantity({
-        productId: item.productId,
-        variantId: item.variantId,
-        quantity: newQty,
-      });
-      await handleGetCart();
-    } catch (error) {
-      console.error("Failed to update quantity", error);
-    }
+  const getDisplayImage = (product, variant) => {
+    if (variant?.images?.length) return variant.images[0].url;
+    if (product?.images?.length) return product.images[0].url;
+    return null;
   };
 
-  // Checkout complete
-  const handleCheckoutComplete = () => {
-    triggerToast("Placing order through secure routing...");
-    setTimeout(() => {
-      setOrderComplete(true);
-      triggerToast("Order placed successfully!");
-    }, 1500);
-  };
+  const formatCurrency = (amount, currency = "INR") =>
+    `${currency} ${Number(amount).toLocaleString("en-IN")}`;
+
+  /* ─── Empty state ─── */
+  if (!cartItems?.length) {
+    return (
+      <>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap"
+          rel="stylesheet"
+        />
+        <div
+          className="min-h-screen flex flex-col"
+          style={{
+            backgroundColor: tokens.surface,
+            fontFamily: "'Inter', sans-serif",
+          }}
+        >
+          {/* Nav */}
+          <nav
+            className="px-8 lg:px-16 xl:px-24 pt-10 pb-6 flex items-center justify-between"
+            style={{ borderBottom: `1px solid ${tokens.surfaceHighest}` }}
+          >
+            <Link
+              to="/"
+              className="text-sm font-medium tracking-[0.35em] uppercase hover:opacity-80 transition-opacity"
+              style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                color: tokens.primary,
+              }}
+            >
+              Snitch.
+            </Link>
+            <button
+              onClick={() => navigate(-1)}
+              className="text-[10px] uppercase tracking-[0.22em] font-medium transition-colors hover:opacity-70"
+              style={{ color: tokens.secondary }}
+            >
+              Return to Archive
+            </button>
+          </nav>
+
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 pb-24 px-8">
+            <p
+              className="text-5xl md:text-6xl font-light leading-tight"
+              style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                color: tokens.onSurface,
+              }}
+            >
+              Your selection is empty.
+            </p>
+            <p
+              className="text-[10px] uppercase tracking-[0.22em]"
+              style={{ color: tokens.muted }}
+            >
+              Curate your collection
+            </p>
+            <Link
+              to="/"
+              className="mt-4 px-10 py-4 text-[11px] uppercase tracking-[0.25em] font-medium transition-all duration-300"
+              style={{
+                backgroundColor: tokens.onSurface,
+                color: tokens.surface,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = tokens.primary;
+                e.currentTarget.style.color = tokens.onSurface;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = tokens.onSurface;
+                e.currentTarget.style.color = tokens.surface;
+              }}
+            >
+              Explore the Archive
+            </Link>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
-      {/* Head Links Injection */}
+      {/* Google Fonts */}
       <link
-        href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap"
         rel="stylesheet"
       />
-      <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        rel="stylesheet"
-      />
-
-      {/* Toast Notifications */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-3 pointer-events-none w-full max-w-sm px-4">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className="bg-primary text-on-primary px-6 py-4 rounded-none shadow-xl border border-outline/20 font-body text-xs tracking-wider uppercase animate-in slide-in-from-bottom-4 duration-300 flex items-center gap-3 justify-center pointer-events-auto"
-          >
-            <span className="material-symbols-outlined text-[16px] text-accent-sage">check_circle</span>
-            {toast.message}
-          </div>
-        ))}
-      </div>
 
       <div
-        className="min-h-screen pt-28 pb-20 selection:bg-secondary-container/30 selection:text-on-secondary-container"
+        className="min-h-screen pb-24 selection:bg-[#C9A96E]/30"
         style={{
-          backgroundColor: "#f9f9f7",
-          fontFamily: "'Hanken Grotesk', sans-serif",
+          backgroundColor: tokens.surface,
+          fontFamily: "'Inter', sans-serif",
         }}
       >
-        <div className="max-w-[800px] mx-auto px-6">
-          <h1 className="font-display text-4xl font-extrabold tracking-tight text-primary mb-12 uppercase">
-            Capsule Bag
-          </h1>
+        {/* ── Main Content ── */}
+        <div className="max-w-7xl mx-auto px-8 lg:px-16 xl:px-24 pt-12 lg:pt-20">
+          <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
+            {/* ═══════════════════════════════════════════════
+                            LEFT COLUMN — Cart Items (65%)
+                        ═══════════════════════════════════════════════ */}
+            <div className="w-full lg:w-[65%]">
+              {/* Heading */}
+              <div className="mb-10">
+                <h1
+                  className="font-light leading-[1.05] mb-2"
+                  style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    color: tokens.onSurface,
+                    fontSize: "clamp(2.5rem, 5vw, 3.5rem)",
+                  }}
+                >
+                  Your Selection
+                </h1>
+                <p
+                  className="text-[10px] uppercase tracking-[0.24em] font-medium"
+                  style={{ color: tokens.muted }}
+                >
+                  {totalPieces} {totalPieces === 1 ? "piece" : "pieces"}
+                </p>
+              </div>
 
-          {orderComplete ? (
-            <div className="py-24 text-center border border-outline-variant/30 bg-surface-container-low p-8">
-              <span className="material-symbols-outlined text-5xl text-secondary mb-4">check_circle</span>
-              <h2 className="text-xl font-bold mb-2">Order Confirmed</h2>
-              <p className="text-sm text-on-surface-variant max-w-md mx-auto mb-8">
-                Thank you for your order. We have received it and are preparing your aesthetic delivery drop.
-              </p>
-              <button
-                onClick={() => {
-                  setOrderComplete(false);
-                  navigate("/");
-                }}
-                className="bg-primary text-on-primary px-8 py-3.5 text-xs font-bold tracking-widest uppercase hover:translate-y-[-2px] transition-transform rounded-none"
-              >
-                Continue Shopping
-              </button>
-            </div>
-          ) : normalizedItems.length > 0 ? (
-            <div className="space-y-8">
-              {/* Items List */}
-              <div className="border border-outline-variant/30 bg-surface-container-lowest divide-y divide-outline-variant/30">
-                {normalizedItems.map((item) => {
-                  const imgUrl = item.imageUrl || "/snitch_editorial_warm.png";
+              {/* ── Cart Item List ── */}
+              <div className="flex flex-col gap-6">
+                {cartItems.map((item) => {
+                  const product =
+                    typeof item.product === "object" && item.product !== null
+                      ? item.product
+                      : { _id: item.product };
+                  const variantId =
+                    typeof item.variant === "object" && item.variant !== null
+                      ? item.variant._id
+                      : item.variant;
+                  const productId = product?._id;
+                  const variantDetail = getVariantDetails(product, variantId);
+                  const imageUrl = getDisplayImage(product, variantDetail);
+                  const displayPrice =
+                    item.price ?? variantDetail?.price ?? product?.price;
+                  const qty = item.quantity ?? 1;
+                  const attributes = variantDetail?.attributes ?? {};
+                  const stock = variantDetail?.stock;
+
                   return (
-                    <div key={item.cartId} className="p-6 flex gap-6 items-center">
-                      {/* Image */}
+                    <div
+                      key={`${productId ?? "item"}-${variantId ?? "default"}`}
+                      className="flex gap-6 md:gap-8 p-6 md:p-8 transition-all duration-300"
+                      style={{ backgroundColor: tokens.surfaceLow }}
+                    >
+                      {/* Product Image */}
                       <div
-                        onClick={() => navigate(`/product/${item.productId}`)}
-                        className="w-24 aspect-[3/4] bg-surface-container overflow-hidden flex-shrink-0 cursor-pointer border border-outline-variant/10 hover:scale-[1.02] transition-transform duration-300"
+                        className="shrink-0 overflow-hidden"
+                        style={{
+                          width: "clamp(100px, 15vw, 160px)",
+                          aspectRatio: "4/5",
+                          backgroundColor: tokens.surfaceHighest,
+                        }}
                       >
-                        <img src={imgUrl} alt={item.title} className="w-full h-full object-cover" />
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={product?.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div
+                            className="w-full h-full flex items-center justify-center"
+                            style={{ backgroundColor: tokens.surfaceHigh }}
+                          />
+                        )}
                       </div>
 
-                      {/* Details */}
-                      <div className="flex-grow flex flex-col justify-between py-1 min-w-0">
+                      {/* Product Info */}
+                      <div className="flex-1 flex flex-col justify-between">
                         <div>
-                          <div className="flex justify-between items-start gap-4">
-                            <h3
-                              onClick={() => navigate(`/product/${item.productId}`)}
-                              className="font-display text-base font-bold cursor-pointer hover:underline text-primary truncate"
+                          {/* Title */}
+                          <h2
+                            className="font-light leading-tight mb-3"
+                            style={{
+                              fontFamily: "'Cormorant Garamond', serif",
+                              fontSize: "clamp(1.2rem, 2.5vw, 1.6rem)",
+                              color: tokens.onSurface,
+                            }}
+                          >
+                            {product?.title}
+                          </h2>
+
+                          {/* Variant Attribute Chips */}
+                          {Object.keys(attributes).length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {Object.entries(attributes).map(([key, val]) => (
+                                <span
+                                  key={key}
+                                  className="px-3 py-1 text-[9px] uppercase tracking-[0.18em] font-medium"
+                                  style={{
+                                    backgroundColor: tokens.primary,
+                                    color: "#fff",
+                                  }}
+                                >
+                                  {val}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Price */}
+                          <p
+                            className="text-[11px] uppercase tracking-[0.2em] font-medium mb-1"
+                            style={{ color: tokens.onSurface }}
+                          >
+                            {displayPrice
+                              ? formatCurrency(
+                                  displayPrice.amount,
+                                  displayPrice.currency,
+                                )
+                              : "—"}
+                          </p>
+
+                          {/* Stock */}
+                          {stock !== undefined && (
+                            <p
+                              className="text-[10px] uppercase tracking-[0.15em] mb-4"
+                              style={{ color: tokens.muted }}
                             >
-                              {item.title}
-                            </h3>
-                            <button
-                              onClick={() => handleRemove(item)}
-                              className="material-symbols-outlined text-on-surface-variant hover:text-error text-lg cursor-pointer"
-                            >
-                              delete
-                            </button>
-                          </div>
+                              {stock > 0 ? `${stock} in stock` : "Out of stock"}
+                            </p>
+                          )}
                         </div>
 
-                        {/* Adjust quantities */}
-                        <div className="flex justify-between items-center mt-6">
-                          <div className="flex items-center border border-outline-variant">
+                        {/* Bottom Row: Quantity + Remove */}
+                        <div className="flex items-center justify-between flex-wrap gap-4">
+                          {/* Quantity Stepper */}
+                          <div
+                            className="flex items-center"
+                            style={{
+                              border: `1px solid ${tokens.outlineVariant}`,
+                            }}
+                          >
                             <button
-                              onClick={() => handleQuantityChange(item, item.quantity - 1)}
-                              className="w-8 h-8 flex items-center justify-center text-sm font-semibold hover:bg-surface-container transition-colors cursor-pointer"
+                              id={`qty-dec-${productId}`}
+                              onClick={() =>
+                                handleDecrementCartItem({
+                                  productId,
+                                  variantId,
+                                })
+                              }
+                              className="w-9 h-9 flex items-center justify-center text-sm font-light transition-colors hover:opacity-60"
+                              style={{
+                                color: tokens.onSurface,
+                                borderRight: `1px solid ${tokens.outlineVariant}`,
+                              }}
+                              aria-label="Decrease quantity"
                             >
-                              -
+                              −
                             </button>
-                            <span className="px-4 text-xs font-bold font-body text-primary">{item.quantity}</span>
+                            <span
+                              className="w-10 text-center text-[11px] tracking-[0.12em] font-medium select-none"
+                              style={{ color: tokens.onSurface }}
+                            >
+                              {qty}
+                            </span>
                             <button
-                              onClick={() => handleQuantityChange(item, item.quantity + 1)}
-                              className="w-8 h-8 flex items-center justify-center text-sm font-semibold hover:bg-surface-container transition-colors cursor-pointer"
+                              id={`qty-inc-${productId}`}
+                              onClick={() =>
+                                handleIncrementCartItem({
+                                  productId,
+                                  variantId,
+                                })
+                              }
+                              className="w-9 h-9 flex items-center justify-center text-sm font-light transition-colors hover:opacity-60"
+                              style={{
+                                color: tokens.onSurface,
+                                borderLeft: `1px solid ${tokens.outlineVariant}`,
+                              }}
+                              aria-label="Increase quantity"
                             >
                               +
                             </button>
                           </div>
 
-                          <span className="font-label text-sm font-bold text-primary tracking-wider">
-                            {currencySymbol} {(item.priceAmount * item.quantity).toLocaleString()}
-                          </span>
+                          {/* Remove */}
+                          <button
+                            id={`remove-${productId}`}
+                            onClick={() =>
+                              handleRemoveCartItem({
+                                productId,
+                                variantId,
+                              })
+                            }
+                            className="text-[10px] uppercase tracking-[0.22em] font-medium transition-all duration-200 hover:underline hover:opacity-70"
+                            style={{ color: tokens.muted }}
+                          >
+                            Remove
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -290,40 +360,195 @@ const Cart = () => {
                 })}
               </div>
 
-              {/* Order Summary & Slider Checkout */}
-              <div className="border border-outline-variant/30 bg-surface-container-lowest p-8 space-y-6">
-                <div className="flex justify-between items-baseline border-b border-outline-variant/30 pb-4">
-                  <span className="font-label text-xs font-bold text-on-surface-variant uppercase tracking-widest">
-                    Subtotal
-                  </span>
-                  <span className="font-label text-lg font-bold text-primary tracking-wider">
-                    {currencySymbol} {subtotal.toLocaleString()}
-                  </span>
+              {/* Policy strip */}
+              <div
+                className="mt-10 pt-8 grid grid-cols-3 gap-4 text-[10px] uppercase tracking-[0.12em]"
+                style={{
+                  borderTop: `1px solid ${tokens.surfaceHighest}`,
+                  color: tokens.muted,
+                }}
+              >
+                <div>
+                  <p
+                    className="font-medium mb-1"
+                    style={{ color: tokens.secondary }}
+                  >
+                    Shipping
+                  </p>
+                  <p>Complimentary over INR 15,000</p>
                 </div>
-                <p className="text-[10px] text-on-surface-variant/70 uppercase tracking-widest leading-relaxed">
-                  Shipping, duty, and secure packaging validation are finalized at the slider checkout routing below.
-                </p>
-
-                <div className="pt-4">
-                  <StitchSliderCheckout onComplete={handleCheckoutComplete} />
+                <div>
+                  <p
+                    className="font-medium mb-1"
+                    style={{ color: tokens.secondary }}
+                  >
+                    Returns
+                  </p>
+                  <p>Within 14 days of delivery</p>
+                </div>
+                <div>
+                  <p
+                    className="font-medium mb-1"
+                    style={{ color: tokens.secondary }}
+                  >
+                    Authenticity
+                  </p>
+                  <p>100% Guaranteed</p>
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="py-24 text-center border border-outline-variant/30 bg-surface-container-lowest p-8">
-              <span className="material-symbols-outlined text-5xl opacity-35 mb-4">shopping_bag</span>
-              <h2 className="text-lg font-bold mb-2">Your Capsule Bag is Empty</h2>
-              <p className="text-xs text-on-surface-variant max-w-sm mx-auto mb-8">
-                Your archive collection currently contains no drops. Explore our pieces to customize your aesthetics.
-              </p>
-              <button
-                onClick={() => navigate("/")}
-                className="bg-primary text-on-primary px-8 py-3.5 text-xs font-bold tracking-widest uppercase hover:translate-y-[-2px] transition-transform rounded-none"
+
+            {/* ═══════════════════════════════════════════════
+                            RIGHT COLUMN — Order Summary (35%, Sticky)
+                        ═══════════════════════════════════════════════ */}
+            <div className="w-full lg:w-[35%] lg:sticky lg:top-28">
+              <div
+                className="p-8"
+                style={{
+                  backgroundColor: tokens.surfaceLowest,
+                  boxShadow: "0 20px 40px rgba(27,28,26,0.04)",
+                }}
               >
-                Go Shop
-              </button>
+                {/* Heading */}
+                <h2
+                  className="font-light mb-6"
+                  style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    fontSize: "1.75rem",
+                    color: tokens.onSurface,
+                  }}
+                >
+                  The Total
+                </h2>
+
+                {/* Tonal divider */}
+                <div
+                  className="mb-6"
+                  style={{ height: 1, backgroundColor: tokens.surfaceHighest }}
+                />
+
+                {/* Line items */}
+                <div className="flex flex-col gap-4 mb-6">
+                  <div className="flex justify-between items-baseline">
+                    <span
+                      className="text-[10px] uppercase tracking-[0.18em]"
+                      style={{ color: tokens.secondary }}
+                    >
+                      Subtotal
+                    </span>
+                    <span
+                      className="text-[11px] uppercase tracking-[0.12em] font-medium"
+                      style={{ color: tokens.onSurface }}
+                    >
+                      {formatCurrency(subtotal)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-baseline">
+                    <span
+                      className="text-[10px] uppercase tracking-[0.18em]"
+                      style={{ color: tokens.secondary }}
+                    >
+                      Shipping
+                    </span>
+                    <span
+                      className="text-[10px] uppercase tracking-widest"
+                      style={{ color: shippingFree ? "#5a7a5a" : tokens.muted }}
+                    >
+                      {shippingFree
+                        ? "Complimentary"
+                        : `Complimentary over INR 15,000`}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-baseline">
+                    <span
+                      className="text-[10px] uppercase tracking-[0.18em]"
+                      style={{ color: tokens.secondary }}
+                    >
+                      Duties & Taxes
+                    </span>
+                    <span
+                      className="text-[10px] uppercase tracking-widest"
+                      style={{ color: tokens.muted }}
+                    >
+                      Included
+                    </span>
+                  </div>
+                </div>
+
+                {/* Total divider */}
+                <div
+                  className="mb-6"
+                  style={{ height: 1, backgroundColor: tokens.surfaceHighest }}
+                />
+
+                {/* Grand Total */}
+                <div className="flex justify-between items-baseline mb-8">
+                  <span
+                    className="text-[10px] uppercase tracking-[0.22em] font-medium"
+                    style={{ color: tokens.onSurface }}
+                  >
+                    Total
+                  </span>
+                  <span
+                    className="text-base uppercase tracking-[0.18em] font-medium"
+                    style={{ color: tokens.onSurface }}
+                  >
+                    {formatCurrency(subtotal)}
+                  </span>
+                </div>
+
+                {/* Primary CTA */}
+                <button
+                  id="proceed-checkout"
+                  className="w-full py-4 mb-3 text-[11px] uppercase tracking-[0.25em] font-medium transition-all duration-300"
+                  style={{
+                    backgroundColor: tokens.onSurface,
+                    color: tokens.surface,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = tokens.primary;
+                    e.currentTarget.style.color = tokens.onSurface;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = tokens.onSurface;
+                    e.currentTarget.style.color = tokens.surface;
+                  }}
+                >
+                  Proceed to Checkout
+                </button>
+
+                {/* Secondary ghost CTA */}
+                <button
+                  id="continue-shopping"
+                  className="w-full py-4 text-[11px] uppercase tracking-[0.25em] font-medium transition-all duration-300"
+                  style={{
+                    backgroundColor: "transparent",
+                    border: `1px solid ${tokens.outlineVariant}`,
+                    color: tokens.onSurface,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = tokens.primary;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = tokens.outlineVariant;
+                  }}
+                  onClick={() => navigate("/")}
+                >
+                  Continue Shopping
+                </button>
+
+                {/* Policy footnote */}
+                <p
+                  className="mt-6 text-center text-[9px] uppercase tracking-[0.14em] leading-relaxed"
+                  style={{ color: tokens.muted }}
+                >
+                  Free returns within 14 days · Authenticity guaranteed
+                </p>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </>

@@ -8,6 +8,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedAttributes, setSelectedAttributes] = useState({});
+  const [notice, setNotice] = useState(null);
   const navigate = useNavigate();
   const { handleGetProductById } = useProduct();
   const { handleAddItem, handleGetCart } = useCart();
@@ -70,6 +71,18 @@ const ProductDetail = () => {
   useEffect(() => {
     setSelectedImage(0);
   }, [activeVariant]);
+
+  useEffect(() => {
+    if (!notice) return undefined;
+
+    const timer = window.setTimeout(() => setNotice(null), 2400);
+
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
+  const showNotice = (message, type = "success") => {
+    setNotice({ message, type });
+  };
 
   const handleAttributeChange = (attrName, value) => {
     const newAttrs = { ...selectedAttributes, [attrName]: value };
@@ -143,18 +156,47 @@ const ProductDetail = () => {
           fontFamily: "'Inter', sans-serif",
         }}
       >
+        {notice && (
+          <div className="fixed right-6 top-6 z-50 w-[min(92vw,20rem)]">
+            <div
+              className="border px-4 py-3 shadow-lg backdrop-blur-sm"
+              role="status"
+              aria-live="polite"
+              style={{
+                backgroundColor:
+                  notice.type === "error"
+                    ? "rgba(255, 247, 245, 0.96)"
+                    : "rgba(251, 249, 246, 0.96)",
+                borderColor:
+                  notice.type === "error" ? "#f0b4aa" : "#d0c5b5",
+                color: "#1b1c1a",
+              }}
+            >
+              <p
+                className="text-[10px] uppercase tracking-[0.24em] font-medium"
+                style={{
+                  color: notice.type === "error" ? "#ba1a1a" : "#7A6E63",
+                }}
+              >
+                {notice.type === "error" ? "Cart update failed" : "Added to cart"}
+              </p>
+              <p className="mt-2 text-sm leading-relaxed">{notice.message}</p>
+            </div>
+          </div>
+        )}
+
         <div className="max-w-7xl mx-auto px-8 lg:px-16 xl:px-24 pt-12 lg:pt-20">
           <div className="flex flex-col lg:flex-row gap-12 lg:gap-24 items-start">
             {/* ── LEFT: Image Gallery ── */}
             <div className="w-full lg:w-[70%] flex flex-col-reverse md:flex-row gap-4 lg:gap-6">
               {/* Thumbnails (Vertical on Desktop, Horizontal on Mobile) */}
               {displayImages.length > 1 && (
-                <div className="flex flex-row md:flex-col gap-4 overflow-x-auto md:overflow-y-auto pb-2 md:pb-0 scrollbar-hide w-full md:w-20 lg:w-24 flex-shrink-0 md:max-h-[calc(100vh-200px)]">
+                <div className="flex flex-row md:flex-col gap-4 overflow-x-auto md:overflow-y-auto pb-2 md:pb-0 scrollbar-hide w-full md:w-20 lg:w-24 shrink-0 md:max-h-[calc(100vh-200px)]">
                   {displayImages.map((img, idx) => (
                     <button
                       key={idx}
                       onClick={() => setSelectedImage(idx)}
-                      className={`flex-shrink-0 w-20 md:w-full aspect-[4/5] overflow-hidden transition-all duration-300 ${selectedImage === idx ? "opacity-100 ring-1 ring-[#C9A96E] ring-offset-2" : "opacity-50 hover:opacity-100"}`}
+                      className={`shrink-0 w-20 md:w-full aspect-4/5 overflow-hidden transition-all duration-300 ${selectedImage === idx ? "opacity-100 ring-1 ring-[#C9A96E] ring-offset-2" : "opacity-50 hover:opacity-100"}`}
                       style={{
                         backgroundColor: "#f5f3f0",
                         "--tw-ring-offset-color": "#fbf9f6",
@@ -362,11 +404,21 @@ const ProductDetail = () => {
                   }}
                   onClick={async () => {
                     if (activeVariant?._id) {
-                      await handleAddItem({
+                      const result = await handleAddItem({
                         productId: product._id,
                         variantId: activeVariant._id,
                       });
-                      handleGetCart();
+
+                      if (result) {
+                        showNotice(`${product.title} was added to your cart.`, "success");
+                      } else {
+                        showNotice(
+                          "The item was added locally, but the server request could not be confirmed.",
+                          "error",
+                        );
+                      }
+
+                      void handleGetCart();
                     }
                   }}
                 >
@@ -394,7 +446,7 @@ const ProductDetail = () => {
 
               {/* Extra elegant details */}
               <div
-                className="mt-14 space-y-4 text-[10px] uppercase tracking-[0.1em]"
+                className="mt-14 space-y-4 text-[10px] uppercase tracking-widest"
                 style={{ color: "#B5ADA3" }}
               >
                 <div
