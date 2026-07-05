@@ -1,6 +1,7 @@
 import cartModel from "../models/cart.model.js";
 import productModel from "../models/product.model.js";
 import {stockOfVariant} from "../dao/product.dao.js"
+import mongoose from "mongoose"
 
 
 
@@ -81,29 +82,67 @@ export const addToCart = async (req, res) => {
     })
 }
 
-export const getCartDetails = async (userId) => {
-    const cart = await cartModel.findOne({ user: userId }).populate({
-        path: "items.product",
-        select: "title price images variants"
-    })
-
-    return cart
-}
-
-
-
 export const getCart = async (req, res) => {
     const user = req.user
 
-    let cart = await getCartDetails(user._id)
+    let cart = (await cartModel.aggregate([
+
+    {
+      $match: {
+        user: new mongoose.Types.ObjectId(user._id)
+      }
+    },
+    { $unwind: { path: '$items' } },
+    {
+      $lookup: {
+        from: 'products',
+        localField: 'items.product',
+        foreignField: '_id',
+        as: 'items.product'
+      }
+    },
+    { $unwind: { path: '$items.product' } },
+    {
+      $unwind: { path: '$items.product.variants' }
+    },
+    {
+      $match: {
+        $expr: {
+          $eq: [
+            '$items.variant',
+            '$items.product.variants._id'
+          ]
+        }
+      }
+    },
+    {
+      $addFields: {
+        itemPrice: {
+          price: {
+            $multiply: [
+              '$items.quantity',
+              '$items.product.variants.price.amount'
+            ]
+          },
+          currency:
+            '$items.product.variants.price.currency'
+        }
+      }
+    },
+    {
+      $group: {
+        _id: '$_id',
+        totalPrice: { $sum: '$itemPrice.price' },
+        currency: {
+          $first: '$itemPrice.currency'
+        },
+        items: { $push: '$items' }
+      }
+    }
+    ])) [0]
 
     if (!cart) {
-        await cartModel.findOneAndUpdate(
-            { user: user._id },
-            { $setOnInsert: { user: user._id } },
-            { new: true, upsert: true }
-        )
-        cart = await getCartDetails(user._id)
+        cart = await cartModel.create({ user: user._id })
     }
 
     return res.status(200).json({
@@ -112,6 +151,8 @@ export const getCart = async (req, res) => {
         cart
     })
 }
+
+
 export const incrementCartItemQuantity = async (req, res) => {
     const { productId, variantId } = req.params
 

@@ -22,6 +22,8 @@ const tokens = {
 
 const Cart = () => {
   const cartItems = useSelector((state) => state.cart.items);
+  const cartTotal = useSelector((state) => state.cart.totalPrice);
+  const cartCurrency = useSelector((state) => state.cart.currency);
   const {
     handleGetCart,
     handleIncrementCartItem,
@@ -36,10 +38,12 @@ const Cart = () => {
 
   /* ─── Derived totals ─── */
   const subtotal =
+    cartTotal ??
     cartItems?.reduce((sum, item) => {
       const qty = item.quantity ?? 1;
       return sum + (item.price?.amount ?? 0) * qty;
-    }, 0) ?? 0;
+    }, 0) ??
+    0;
 
   const freeShippingThreshold = 15000;
   const shippingFree = subtotal >= freeShippingThreshold;
@@ -47,8 +51,16 @@ const Cart = () => {
     cartItems?.reduce((sum, item) => sum + (item.quantity ?? 1), 0) ?? 0;
 
   /* ─── Helpers ─── */
-  const getVariantDetails = (product, variantId) => {
-    if (!product?.variants || !variantId) return null;
+  const getVariantDetails = (product, variantId, fallbackVariant) => {
+    if (fallbackVariant && typeof fallbackVariant === "object") {
+      return fallbackVariant;
+    }
+
+    if (product?.variants && !Array.isArray(product.variants)) {
+      return product.variants;
+    }
+
+    if (!Array.isArray(product?.variants) || !variantId) return null;
     return product.variants.find((v) => v._id === variantId) ?? null;
   };
 
@@ -58,7 +70,7 @@ const Cart = () => {
     return null;
   };
 
-  const formatCurrency = (amount, currency = "INR") =>
+  const formatCurrency = (amount, currency = cartCurrency ?? "INR") =>
     `${currency} ${Number(amount).toLocaleString("en-IN")}`;
 
   /* ─── Empty state ─── */
@@ -194,13 +206,24 @@ const Cart = () => {
                       ? item.variant._id
                       : item.variant;
                   const productId = product?._id;
-                  const variantDetail = getVariantDetails(product, variantId);
+                  const variantDetail = getVariantDetails(
+                    product,
+                    variantId,
+                    typeof item.variant === "object" && item.variant !== null
+                      ? item.variant
+                      : null,
+                  );
                   const imageUrl = getDisplayImage(product, variantDetail);
                   const displayPrice =
                     item.price ?? variantDetail?.price ?? product?.price;
                   const qty = item.quantity ?? 1;
                   const attributes = variantDetail?.attributes ?? {};
                   const stock = variantDetail?.stock;
+                  const variantPrice = variantDetail?.price;
+                  const priceDifference =
+                    displayPrice?.amount != null && variantPrice?.amount != null
+                      ? displayPrice.amount - variantPrice.amount
+                      : null;
 
                   return (
                     <div
@@ -286,6 +309,28 @@ const Cart = () => {
                               {stock > 0 ? `${stock} in stock` : "Out of stock"}
                             </p>
                           )}
+                          {priceDifference !== null &&
+                            priceDifference !== 0 && (
+                              <>
+                                {priceDifference > 0 ? (
+                                  <p className="text-[10px] uppercase tracking-[0.15em] mb-4 text-green-800 font-bold">
+                                    {" "}
+                                    you will get this at{" "}
+                                    {formatCurrency(
+                                      variantPrice.amount,
+                                      variantPrice.currency,
+                                    )}{" "}
+                                    save {Math.abs(priceDifference)}. .{" "}
+                                  </p>
+                                ) : (
+                                  <p className="text-[10px] uppercase tracking-[0.15em] mb-4 text-red-600 font-bold">
+                                    {" "}
+                                    Warning this product will cost you{" "}
+                                    {Math.abs(priceDifference)} more.{" "}
+                                  </p>
+                                )}
+                              </>
+                            )}
                         </div>
 
                         {/* Bottom Row: Quantity + Remove */}
@@ -495,7 +540,7 @@ const Cart = () => {
                     className="text-base uppercase tracking-[0.18em] font-medium"
                     style={{ color: tokens.onSurface }}
                   >
-                    {formatCurrency(subtotal)}
+                    {formatCurrency(subtotal, cartCurrency ?? "INR")}
                   </span>
                 </div>
 

@@ -22,8 +22,14 @@ const cartSlice = createSlice({
     name: "cart",
     initialState: {
         items: [],
+        totalPrice:null,
+        currency:null,
     },
     reducers: {
+        setCartSummary: (state, action) => {
+            state.totalPrice = action.payload?.totalPrice ?? null;
+            state.currency = action.payload?.currency ?? null;
+        },
         setItems: (state, action) => {
             state.items = Array.isArray(action.payload)
                 ? action.payload.map(normalizeCartItem)
@@ -89,6 +95,7 @@ const cartSlice = createSlice({
 });
 
 export const {
+    setCartSummary,
     setItems,
     addItem,
     incrementCartItem,

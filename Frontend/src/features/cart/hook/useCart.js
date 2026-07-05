@@ -2,6 +2,7 @@ import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
     addItem as addItemToCart,
+    setCartSummary,
     decrementCartItem,
     incrementCartItem,
     removeItem,
@@ -56,12 +57,20 @@ export const useCart = () => {
     const handleGetCart = useCallback(async () => {
         try {
             const data = await getCart();
-            const items = data?.cart?.items ?? [];
+            const cart = data?.cart ?? {};
+            const items = cart?.items ?? [];
             dispatch(setItems(items));
+            dispatch(
+                setCartSummary({
+                    totalPrice: cart?.totalPrice ?? null,
+                    currency: cart?.currency ?? null,
+                }),
+            );
             return items;
         } catch {
             const cachedItems = readCachedCart();
             dispatch(setItems(cachedItems));
+            dispatch(setCartSummary({ totalPrice: null, currency: null }));
             return cachedItems;
         }
     }, [dispatch]);
