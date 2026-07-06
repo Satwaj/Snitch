@@ -443,6 +443,31 @@ const ProductDetail = () => {
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = "#d0c5b5";
                   }}
+                  
+                  
+                  onClick={() => {
+                    if (activeVariant?._id) {
+                      void handleAddItem(
+                        {
+                          productId: product._id,
+                          variantId: activeVariant._id, 
+                        },
+                      ).then((result) => {
+                        if (result) {
+                          showNotice(
+                            `${product.title} was added to your cart.`,
+                            "success",
+                          );
+                          navigate("/cart");
+                        } else {
+                          showNotice(
+                            "The item was added locally, but the server request could not be confirmed.",
+                            "error"
+                          );
+                        }
+                      });
+                    }
+                  }}
                 >
                   Buy Now
                 </button>
