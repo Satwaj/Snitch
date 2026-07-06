@@ -1,4 +1,6 @@
-import  { useState } from "react";
+import { useState } from "react";
+import { Link, Navigate } from "react-router";
+import { useSelector } from "react-redux";
 import { useAuth } from "../hook/useAuth";
 import { useNavigate } from "react-router";
 import ContinueWithGoogle from "../components/ContinueWithGoogle";
@@ -6,6 +8,16 @@ import ContinueWithGoogle from "../components/ContinueWithGoogle";
 const Register = () => {
   const { handleRegister } = useAuth();
   const navigate = useNavigate();
+  const user = useSelector((state) => state.auth.user);
+  const loading = useSelector((state) => state.auth.loading);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -32,7 +44,7 @@ const Register = () => {
       isSeller: formData.isSeller,
       fullname: formData.fullName,
     });
-    navigate("/");
+    navigate("/", { replace: true });
   };
 
   const inputStyle = {
@@ -252,7 +264,7 @@ const Register = () => {
                 htmlFor="reg-isSeller"
                 className="flex items-center gap-4 cursor-pointer group"
               >
-                <div className="relative flex-shrink-0">
+                <div className="relative shrink-0">
                   <input
                     id="reg-isSeller"
                     type="checkbox"
@@ -263,7 +275,7 @@ const Register = () => {
                   />
                   {/* Custom checkbox */}
                   <div
-                    className="w-4 h-4 border transition-all duration-200 flex items-center justify-center peer-checked:border-[#C9A96E]"
+                    className="w-4 h-4 border transition-all duration-200 flex items-center justify-center peer-checked:border-[#C9A96E] shrink-0"
                     style={{
                       borderColor: formData.isSeller ? "#C9A96E" : "#d0c5b5",
                       backgroundColor: formData.isSeller
@@ -344,8 +356,8 @@ const Register = () => {
                 style={{ color: "#B5ADA3" }}
               >
                 Already have an account?{" "}
-                <a
-                  href="/login"
+                <Link
+                  to="/login"
                   className="transition-colors duration-200"
                   style={{
                     color: "#7A6E63",
@@ -356,7 +368,7 @@ const Register = () => {
                   onMouseLeave={(e) => (e.target.style.color = "#7A6E63")}
                 >
                   Sign in
-                </a>
+                </Link>
               </p>
             </form>
           </div>

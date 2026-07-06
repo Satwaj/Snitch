@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Link, Navigate } from "react-router";
+import { useSelector } from "react-redux";
 import { useAuth } from "../hook/useAuth";
 import { useNavigate } from "react-router";
 import ContinueWithGoogle from "../components/ContinueWithGoogle";
@@ -6,6 +8,16 @@ import ContinueWithGoogle from "../components/ContinueWithGoogle";
 const Login = () => {
   const { handleLogin } = useAuth();
   const navigate = useNavigate();
+  const user = useSelector((state) => state.auth.user);
+  const loading = useSelector((state) => state.auth.loading);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
 
   const [formData, setFormData] = useState({
     email: "",
@@ -20,15 +32,12 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      
-      const user = await handleLogin({ email: formData.email, password: formData.password });
-     
-     if(user.role == "buyer"){
-      navigate("/");
-     } else if(user.role == "seller"){
-      navigate("/seller/dashboard");
-     }
+      const user = await handleLogin({
+        email: formData.email,
+        password: formData.password,
+      });
 
+      navigate("/", { replace: true });
     } catch (error) {
       console.error("Login failed", error);
     }
@@ -260,8 +269,8 @@ const Login = () => {
                 style={{ color: "#B5ADA3" }}
               >
                 Don&apos;t have an account?{" "}
-                <a
-                  href="/register"
+                <Link
+                  to="/register"
                   className="transition-colors duration-200"
                   style={{
                     color: "#7A6E63",
@@ -272,7 +281,7 @@ const Login = () => {
                   onMouseLeave={(e) => (e.target.style.color = "#7A6E63")}
                 >
                   Sign up
-                </a>
+                </Link>
               </p>
             </form>
           </div>

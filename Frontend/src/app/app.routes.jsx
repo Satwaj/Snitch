@@ -9,17 +9,27 @@ import Productdetail from "../features/products/pages/Productdetail";
 import SellerProductDetails from "../features/products/pages/SellerProductDetails";
 import Cart from "../features/cart/pages/Cart";
 import OrderSuccess from "../features/cart/pages/OrderSuccess";
+import Menu from "../features/products/pages/Menu";
+import Profile from "../features/products/pages/Profile";
 import AppLayout from "./AppLayout";
+import AuthRoute from "../features/auth/components/AuthRoute";
 
 export const routes = createBrowserRouter([
   {
-    
     path: "/register",
-    element: <Register />,
+    element: (
+      <AuthRoute>
+        <Register />
+      </AuthRoute>
+    ),
   },
   {
     path: "/login",
-    element: <Login />,
+    element: (
+      <AuthRoute>
+        <Login />
+      </AuthRoute>
+    ),
   },
   {
     element: <AppLayout />,
@@ -35,6 +45,14 @@ export const routes = createBrowserRouter([
       {
         path: "/cart",
         element: <Cart />,
+      },
+      {
+        path: "/menu",
+        element: <Menu />,
+      },
+      {
+        path: "/profile",
+        element: <Profile />,
       },
       {
         path: "/order-success",
