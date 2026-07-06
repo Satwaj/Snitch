@@ -2,6 +2,11 @@ import userModel from '../models/user.model.js'
 import jwt from 'jsonwebtoken'
 import { config } from '../config/config.js'
 
+const cookieOptions = {
+    httpOnly: true,
+    sameSite: config.NODE_ENV === "production" ? "none" : "lax",
+    secure: config.NODE_ENV === "production",
+}
 
 async function sendTokenResponse(user, res, message) {
 
@@ -9,7 +14,7 @@ async function sendTokenResponse(user, res, message) {
         id: user._id,
     }, config.JWT_SECRET)
 
-    res.cookie("token", token, )
+    res.cookie("token", token, cookieOptions)
 
     res.status(200).json({
         success: true,
@@ -103,9 +108,9 @@ export const googleCallback = async (req, res) => {
         expiresIn: "7d"
     })
 
-    res.cookie("token", token)
+    res.cookie("token", token, cookieOptions)
 
-    res.redirect("http://localhost:5173/")
+    res.redirect(process.env.CLIENT_URL || "http://localhost:5173/")
 }
 
 export const getMe = async (req, res) => {
@@ -125,7 +130,7 @@ export const getMe = async (req, res) => {
 }
 
 export const logout = async (req, res) => {
-    res.clearCookie("token")
+    res.clearCookie("token", cookieOptions)
 
     res.status(200).json({
         message: "User logged out successfully",

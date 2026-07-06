@@ -93,7 +93,7 @@ const Cart = () => {
         console.log(order);
 
         const options = {
-          key: "rzp_test_TA3qVSsDYD3TOE",
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
           amount: order.amount, // Amount in paise
           currency: order.currency,
           name: "Snitch",

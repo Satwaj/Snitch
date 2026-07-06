@@ -2,9 +2,10 @@
 
 import axios from "axios"
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
 const cartApiInstance = axios.create({
-    baseURL: "/api/cart",
+    baseURL: `${API_URL}/api/cart`,
     withCredentials: true
 })
 
