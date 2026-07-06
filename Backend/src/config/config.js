@@ -3,6 +3,23 @@ import dotenv from "dotenv"
 
 dotenv.config()
 
+const normalizeUrlEnv = (value) => {
+    const normalizedValue = value.trim()
+    const lastHttpsIndex = normalizedValue.lastIndexOf("https://")
+
+    if (lastHttpsIndex !== -1) {
+        return normalizedValue.slice(lastHttpsIndex).trim()
+    }
+
+    const lastHttpIndex = normalizedValue.lastIndexOf("http://")
+
+    if (lastHttpIndex !== -1) {
+        return normalizedValue.slice(lastHttpIndex).trim()
+    }
+
+    return normalizedValue
+}
+
 
 if(!process.env.MONGO_URI){
     throw new Error("MONGO_URI is not defined in the environment variables")
@@ -43,7 +60,7 @@ export const config = {
     JWT_SECRET : process.env.JWT_SECRET,
     CLIENT_ID : process.env.GOOGLE_CLIENT_ID,
     CLIENT_SECRET : process.env.GOOGLE_CLIENT_SECRET,
-    REDIRECT_URI : process.env.GOOGLE_REDIRECT_URI,
+    REDIRECT_URI : normalizeUrlEnv(process.env.GOOGLE_REDIRECT_URI),
     NODE_ENV : process.env.NODE_ENV || "development",
     IMAGEKIT_PRIVATE_KEY : process.env.IMAGEKIT_PRIVATE_KEY,
     RAZORPAY_KEY_ID : process.env.RAZORPAY_KEY_ID,
