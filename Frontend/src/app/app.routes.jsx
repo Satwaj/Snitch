@@ -13,6 +13,7 @@ import AppLayout from "./AppLayout";
 
 export const routes = createBrowserRouter([
   {
+    
     path: "/register",
     element: <Register />,
   },
