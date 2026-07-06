@@ -14,6 +14,8 @@ import {
     incrementCartItemApi,
     decrementCartItemApi,
     removeCartItem,
+    createCartOrder,
+    verifyCartOrder
 } from "../services/cart.api.js";
 
 const CART_STORAGE_KEY = "snitch_cart_items";
@@ -145,8 +147,17 @@ export const useCart = () => {
             }
         },
         [dispatch],
-    );
+    )
 
+      async function handleCreateCartOrder() {
+        const data = await createCartOrder()
+        return data.order
+    }
+
+    const handleVerifyCartOrder = async ({ razorpay_order_id, razorpay_payment_id, razorpay_signature }) => {
+        const data = await verifyCartOrder({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
+        return data;
+    };
 
     return {
         handleAddItem,
@@ -154,6 +165,8 @@ export const useCart = () => {
         handleIncrementCartItem,
         handleDecrementCartItem,
         handleRemoveCartItem,
+        handleCreateCartOrder,
+        handleVerifyCartOrder
     };
 
 }

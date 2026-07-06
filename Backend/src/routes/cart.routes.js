@@ -1,7 +1,7 @@
 import express from "express";
 import {authenticateSeller,authenticateUser} from "../middlewares/auth.middleware.js"
 import { validateAddToCart,validateIncrementCartItemQuantity,validateDecrementCartItemQuantity } from "../validators/cart.validator.js";
-import { addToCart,getCart,incrementCartItemQuantity,decrementCartItemQuantity,removeFromCart } from "../controllers/cart.controller.js";
+import { addToCart,getCart,incrementCartItemQuantity,decrementCartItemQuantity,removeFromCart,createOrderController,verifyOrderController } from "../controllers/cart.controller.js";
 
 
 
@@ -67,5 +67,14 @@ router.delete("/remove/:productId/:variantId",authenticateUser,validateIncrement
  * @route POST /api/cart/payment/create/order
  */
 
+router.post("/payment/create/order",authenticateUser, createOrderController)
+
+/**
+ * @route POST /api/cart/payment/verify/order
+ * @desc Verify the payment for the order
+ * @access Private
+ */
+
+router.post("/payment/verify/order", authenticateUser, verifyOrderController)
 
 export default router;  

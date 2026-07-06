@@ -8,6 +8,7 @@ import Home from "../features/products/pages/Home"
 import Productdetail from "../features/products/pages/Productdetail"
 import SellerProductDetails from "../features/products/pages/SellerProductDetails"
 import Cart from "../features/cart/pages/Cart"
+import OrderSuccess from "../features/cart/pages/OrderSuccess"
 import AppLayout from "./AppLayout"
 
 
@@ -35,6 +36,10 @@ import AppLayout from "./AppLayout"
        {
          path: "/cart",
          element: <Cart />,
+       },
+       {
+         path: "/order-success",
+         element: <OrderSuccess />,
        },
 
        {
