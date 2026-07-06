@@ -13,6 +13,8 @@ import Menu from "../features/products/pages/Menu";
 import Profile from "../features/products/pages/Profile";
 import AppLayout from "./AppLayout";
 import AuthRoute from "../features/auth/components/AuthRoute";
+import TrackOrder from "../features/cart/pages/TrackOrder";
+import NotFound from "../features/shared/pages/NotFound";
 
 export const routes = createBrowserRouter([
   {
@@ -57,6 +59,14 @@ export const routes = createBrowserRouter([
       {
         path: "/order-success",
         element: <OrderSuccess />,
+      },
+      {
+        path: "/track-order",
+        element: <TrackOrder />,
+      },
+      {
+        path: "*",
+        element: <NotFound />,
       },
 
       {

@@ -1,11 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate, Link } from "react-router";
+import { useNavigate, Link, useLocation } from "react-router";
 import { useAuth } from "../../auth/hook/useAuth";
 import { useProduct } from "../../products/hooks/useProduct";
+import { motion, AnimatePresence } from "framer-motion";
+import { gsap } from "gsap";
+import { 
+  Search, 
+  ShoppingBag, 
+  User, 
+  LogOut, 
+  LayoutDashboard, 
+  Compass, 
+  Menu as MenuIcon, 
+  X, 
+  ChevronDown, 
+  Truck, 
+  ClipboardList 
+} from "lucide-react";
 
 const Nav = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { handleLogout } = useAuth();
   const { handleGetAllProducts } = useProduct();
   const user = useSelector((state) => state.auth.user);
@@ -14,7 +30,9 @@ const Nav = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const navLinksRef = useRef(null);
 
   useEffect(() => {
     if (!products || products.length === 0) {
@@ -32,6 +50,22 @@ const Nav = () => {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // GSAP animation for navbar link entrance on first load
+  useEffect(() => {
+    if (navLinksRef.current) {
+      gsap.fromTo(
+        navLinksRef.current.querySelectorAll(".nav-anim-link"),
+        { y: -10, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: "power2.out" }
+      );
+    }
   }, []);
 
   const suggestions = useMemo(() => {
@@ -85,434 +119,322 @@ const Nav = () => {
   };
 
   return (
-    <nav
-      className="sticky top-0 z-40 border-b backdrop-blur-xl"
-      style={{
-        borderColor: "#e4e2df",
-        background:
-          "linear-gradient(180deg, rgba(251,249,246,0.96) 0%, rgba(251,249,246,0.88) 100%)",
-      }}
-      ref={dropdownRef}
-    >
-      <div className="mx-auto max-w-7xl px-4 py-4 lg:px-8 xl:px-12">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-8">
-          <div className="flex items-center justify-between gap-4 lg:shrink-0">
-            <Link
-              to="/"
-              className="logo-hover text-sm font-medium uppercase tracking-[0.35em] transition-opacity hover:opacity-80"
-              style={{
-                fontFamily: "'Cormorant Garamond', serif",
-                color: "#C9A96E",
-              }}
-            >
-              Snitch.
-            </Link>
-
-            <div className="flex items-center gap-3 lg:hidden">
-              <Link
-                to="/cart"
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors hover:border-[#C9A96E] hover:text-[#C9A96E]"
-                style={{ borderColor: "#e4e2df", color: "#1b1c1a" }}
-                aria-label="Shopping cart"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <path d="M16 10a4 4 0 0 1-8 0" />
-                </svg>
-                {cartItems?.length > 0 && (
-                  <span
-                    className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-semibold text-white"
-                    style={{ backgroundColor: "#C9A96E" }}
-                  >
-                    {cartItems.length > 9 ? "9+" : cartItems.length}
-                  </span>
-                )}
-              </Link>
-            </div>
-          </div>
-
-          <form className="relative flex-1" onSubmit={handleSearchSubmit}>
-            <div
-              className="flex items-center gap-3 rounded-full border px-4 py-3 transition-shadow focus-within:shadow-[0_0_0_4px_rgba(201,169,110,0.12)]"
-              style={{ backgroundColor: "#fff", borderColor: "#e4e2df" }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ color: "#7A6E63" }}
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-              </svg>
-              <input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                onFocus={() => setIsSearchFocused(true)}
-                placeholder="Search for jackets, sneakers, accessories..."
-                className="w-full bg-transparent text-sm outline-none placeholder:text-[#9c9187]"
-                style={{ color: "#1b1c1a" }}
-              />
-              <button
-                type="submit"
-                className="hidden rounded-full px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.24em] transition-colors sm:inline-flex"
-                style={{ backgroundColor: "#1b1c1a", color: "#fbf9f6" }}
-              >
-                Search
-              </button>
-            </div>
-
-            {isSearchFocused && suggestions.length > 0 && (
-              <div
-                className="absolute left-0 right-0 top-[calc(100%+10px)] z-50 overflow-hidden rounded-3xl border shadow-[0_20px_60px_rgba(27,28,26,0.12)]"
-                style={{ borderColor: "#e4e2df", backgroundColor: "#fbf9f6" }}
-              >
-                <div
-                  className="border-b px-5 py-3"
-                  style={{ borderColor: "#e4e2df" }}
-                >
-                  <p
-                    className="text-[10px] font-semibold uppercase tracking-[0.24em]"
-                    style={{ color: "#7A6E63" }}
-                  >
-                    Related products
-                  </p>
-                </div>
-
-                <div className="max-h-[320px] overflow-y-auto no-scrollbar">
-                  {suggestions.map((product) => {
-                    const imageUrl =
-                      product.images && product.images.length > 0
-                        ? product.images[0].url
-                        : "/snitch_editorial_warm.png";
-
-                    return (
-                      <Link
-                        key={product._id}
-                        to={`/product/${product._id}`}
-                        className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-[#f4efe7]"
-                        onClick={() => setIsSearchFocused(false)}
-                      >
-                        <div
-                          className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl"
-                          style={{ backgroundColor: "#f5f3f0" }}
-                        >
-                          <img
-                            src={imageUrl}
-                            alt={product.title}
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p
-                            className="truncate text-sm font-medium"
-                            style={{ color: "#1b1c1a" }}
-                          >
-                            {product.title}
-                          </p>
-                          <p
-                            className="truncate text-[12px]"
-                            style={{ color: "#7A6E63" }}
-                          >
-                            {product.description}
-                          </p>
-                        </div>
-                        <span
-                          className="text-[10px] font-semibold uppercase tracking-[0.2em]"
-                          style={{ color: "#C9A96E" }}
-                        >
-                          {product.price?.currency}{" "}
-                          {product.price?.amount?.toLocaleString()}
-                        </span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </form>
-
-          <div className="flex items-center justify-between gap-3 lg:shrink-0">
-            <div
-              className="hidden items-center gap-3 text-[10px] font-medium uppercase tracking-[0.2em] md:flex"
-              style={{ color: "#7A6E63" }}
-            >
+    <>
+      <nav
+        className="sticky top-0 z-40 border-b backdrop-blur-xl transition-all duration-300"
+        style={{
+          borderColor: "rgba(228, 226, 223, 0.6)",
+          background: "linear-gradient(180deg, rgba(251, 249, 246, 0.95) 0%, rgba(251, 249, 246, 0.85) 100%)",
+        }}
+        ref={dropdownRef}
+      >
+        <div className="mx-auto max-w-7xl px-6 py-4 lg:px-12">
+          <div className="flex items-center justify-between gap-4 lg:gap-8">
+            
+            {/* Logo */}
+            <div className="flex items-center gap-4 lg:shrink-0">
               <Link
                 to="/"
-                className="nav-link-effect transition-colors hover:text-[#C9A96E]"
+                className="logo-hover text-lg font-medium uppercase tracking-[0.35em] transition-opacity hover:opacity-85 text-[#1b1c1a]"
+                style={{
+                  fontFamily: "'Cormorant Garamond', serif",
+                  color: "#C9A96E",
+                }}
               >
-                New In
-              </Link>
-              <Link
-                to="/menu"
-                className="nav-link-effect transition-colors hover:text-[#C9A96E]"
-              >
-                Shop All
+                Snitch.
               </Link>
             </div>
 
-            <div className="flex items-center gap-2">
-              {user ? (
-                <>
-                  <Link
-                    to="/cart"
-                    className="relative hidden h-10 w-10 items-center justify-center rounded-full border transition-colors hover:border-[#C9A96E] hover:text-[#C9A96E] lg:inline-flex"
-                    style={{ borderColor: "#e4e2df", color: "#1b1c1a" }}
-                    aria-label="Shopping cart"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                      <line x1="3" y1="6" x2="21" y2="6" />
-                      <path d="M16 10a4 4 0 0 1-8 0" />
-                    </svg>
-                    {cartItems?.length > 0 && (
-                      <span
-                        className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-semibold text-white"
-                        style={{ backgroundColor: "#C9A96E" }}
-                      >
-                        {cartItems.length > 9 ? "9+" : cartItems.length}
-                      </span>
-                    )}
-                  </Link>
+            {/* Central Search Form */}
+            <form className="relative flex-1 max-w-md hidden md:block" onSubmit={handleSearchSubmit}>
+              <div
+                className="flex items-center gap-3 rounded-full border px-4 py-2.5 transition-all duration-300 focus-within:shadow-[0_0_0_4px_rgba(201,169,110,0.08)] bg-white focus-within:border-[#C9A96E]"
+                style={{ borderColor: "#e4e2df" }}
+              >
+                <Search size={16} className="text-[#7A6E63]" />
+                <input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  placeholder="Search for jackets, sneakers, accessories..."
+                  className="w-full bg-transparent text-xs outline-none placeholder:text-[#9c9187] text-[#1b1c1a]"
+                />
+                {searchQuery && (
+                  <button type="button" onClick={() => setSearchQuery("")} className="text-[#7A6E63] hover:text-[#1b1c1a]">
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
 
+              {/* Suggestions overlay */}
+              <AnimatePresence>
+                {isSearchFocused && suggestions.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    className="absolute left-0 right-0 top-[calc(100%+10px)] z-50 overflow-hidden rounded-3xl border shadow-[0_20px_50px_rgba(27,28,26,0.08)] bg-[#fbf9f6]"
+                    style={{ borderColor: "#e4e2df" }}
+                  >
+                    <div className="border-b px-5 py-3" style={{ borderColor: "#e4e2df" }}>
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-[#7A6E63]">
+                        Related atelier items
+                      </p>
+                    </div>
+
+                    <div className="max-h-[300px] overflow-y-auto no-scrollbar">
+                      {suggestions.map((product) => {
+                        const imageUrl =
+                          product.images && product.images.length > 0
+                            ? product.images[0].url
+                            : "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&q=80&w=100";
+
+                        return (
+                          <Link
+                            key={product._id}
+                            to={`/product/${product._id}`}
+                            className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-[#f4efe7]"
+                            onClick={() => setIsSearchFocused(false)}
+                          >
+                            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-[#f5f3f0]">
+                              <img
+                                src={imageUrl}
+                                alt={product.title}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-xs font-semibold text-[#1b1c1a]">
+                                {product.title}
+                              </p>
+                              <p className="truncate text-[10px] text-[#7A6E63]">
+                                {product.description}
+                              </p>
+                            </div>
+                            <span className="text-[10px] font-semibold text-[#C9A96E] shrink-0">
+                              {product.price?.currency} {product.price?.amount?.toLocaleString()}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </form>
+
+            {/* Navigation links & action icons */}
+            <div className="flex items-center gap-6" ref={navLinksRef}>
+              <div className="hidden lg:flex items-center gap-6 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#7A6E63]">
+                <Link to="/" className="nav-anim-link nav-link-effect transition-colors hover:text-[#C9A96E]">
+                  New In
+                </Link>
+                <Link to="/menu" className="nav-anim-link nav-link-effect transition-colors hover:text-[#C9A96E]">
+                  Shop All
+                </Link>
+                <Link to="/track-order" className="nav-anim-link nav-link-effect flex items-center gap-1.5 transition-colors hover:text-[#C9A96E]">
+                  <Truck size={12} /> Track Order
+                </Link>
+              </div>
+
+              {/* Shopping bag icon */}
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/cart"
+                  className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all hover:border-[#C9A96E] text-[#1b1c1a] border-[#e4e2df] hover:scale-105"
+                  aria-label="Shopping cart"
+                >
+                  <ShoppingBag size={15} />
+                  {cartItems?.length > 0 && (
+                    <span
+                      className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[8px] font-bold text-white"
+                      style={{ backgroundColor: "#C9A96E" }}
+                    >
+                      {cartItems.length}
+                    </span>
+                  )}
+                </Link>
+
+                {/* Profile menu trigger */}
+                {user ? (
                   <div className="relative">
                     <button
                       type="button"
                       onClick={() => setIsProfileOpen((open) => !open)}
-                      className="flex items-center gap-3 rounded-full border px-2 py-1.5 text-left transition-colors hover:border-[#C9A96E]"
-                      style={{
-                        borderColor: "#e4e2df",
-                        backgroundColor: "#fff",
-                      }}
+                      className="flex items-center gap-2 rounded-full border p-1 pr-3 text-left transition-all hover:border-[#C9A96E] border-[#e4e2df] bg-white cursor-pointer select-none"
                     >
-                      <span
-                        className="flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-semibold uppercase"
-                        style={{ backgroundColor: "#1b1c1a", color: "#fbf9f6" }}
-                      >
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold uppercase bg-[#1b1c1a] text-[#fbf9f6]">
                         {initials}
                       </span>
-                      <span className="hidden pr-1 md:block">
-                        <span
-                          className="block text-[10px] font-semibold uppercase tracking-[0.18em]"
-                          style={{ color: "#7A6E63" }}
-                        >
+                      <span className="hidden md:flex items-center gap-1">
+                        <span className="block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#1b1c1a]">
                           Account
                         </span>
-                        <span
-                          className="block text-sm font-medium"
-                          style={{ color: "#1b1c1a" }}
-                        >
-                          {user.fullname}
-                        </span>
+                        <ChevronDown size={12} className={`text-[#7A6E63] transition-transform duration-300 ${isProfileOpen ? "rotate-180" : ""}`} />
                       </span>
                     </button>
 
-                    {isProfileOpen && (
-                      <div
-                        className="absolute right-0 top-[calc(100%+12px)] z-50 w-72 overflow-hidden rounded-3xl border shadow-[0_24px_60px_rgba(27,28,26,0.14)]"
-                        style={{
-                          borderColor: "#e4e2df",
-                          backgroundColor: "#fbf9f6",
-                        }}
-                      >
-                        <div
-                          className="px-5 py-4"
-                          style={{
-                            background:
-                              "linear-gradient(135deg, rgba(201,169,110,0.12), rgba(180,196,180,0.10))",
-                          }}
+                    {/* Profile Dropdown */}
+                    <AnimatePresence>
+                      {isProfileOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.2, ease: "easeOut" }}
+                          className="absolute right-0 top-[calc(100%+12px)] z-50 w-64 overflow-hidden rounded-2xl border shadow-[0_24px_50px_rgba(27,28,26,0.1)] bg-[#fbf9f6]"
+                          style={{ borderColor: "#e4e2df" }}
                         >
-                          <p
-                            className="text-[10px] font-semibold uppercase tracking-[0.24em]"
-                            style={{ color: "#7A6E63" }}
-                          >
-                            Signed in as
-                          </p>
-                          <p
-                            className="mt-1 text-sm font-medium"
-                            style={{ color: "#1b1c1a" }}
-                          >
-                            {user.fullname}
-                          </p>
-                          <p
-                            className="text-[12px]"
-                            style={{ color: "#7A6E63" }}
-                          >
-                            {user.email}
-                          </p>
-                        </div>
+                          <div className="px-5 py-4 bg-gradient-to-br from-[#C9A96E]/10 to-[#b4c4b4]/5 border-b border-[#e4e2df]">
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-[#7A6E63]">
+                              Signed in as
+                            </p>
+                            <p className="mt-0.5 text-xs font-semibold text-[#1b1c1a] truncate">
+                              {user.fullname}
+                            </p>
+                            <p className="text-[10px] text-[#7A6E63] truncate">
+                              {user.email}
+                            </p>
+                          </div>
 
-                        <div className="p-2">
-                          <Link
-                            to="/profile"
-                            className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition-colors hover:bg-[#f4efe7]"
-                            style={{ color: "#1b1c1a" }}
-                            onClick={() => setIsProfileOpen(false)}
-                          >
-                            <span
-                              className="flex h-9 w-9 items-center justify-center rounded-full"
-                              style={{ backgroundColor: "#f4efe7" }}
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="18"
-                                height="18"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.7"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <path d="M20 21a8 8 0 1 0-16 0" />
-                                <circle cx="12" cy="8" r="4" />
-                              </svg>
-                            </span>
-                            <span>
-                              <span className="block font-medium">
-                                Manage account
-                              </span>
-                              <span
-                                className="block text-[12px]"
-                                style={{ color: "#7A6E63" }}
-                              >
-                                Profile, details and preferences
-                              </span>
-                            </span>
-                          </Link>
-
-                          {user.role === "seller" && (
+                          <div className="p-1.5 space-y-0.5">
                             <Link
-                              to="/seller/dashboard"
-                              className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition-colors hover:bg-[#f4efe7]"
-                              style={{ color: "#1b1c1a" }}
+                              to="/profile"
+                              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition-colors hover:bg-[#f4efe7] text-[#1b1c1a]"
                               onClick={() => setIsProfileOpen(false)}
                             >
-                              <span
-                                className="flex h-9 w-9 items-center justify-center rounded-full"
-                                style={{ backgroundColor: "#f4efe7" }}
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="18"
-                                  height="18"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="1.7"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <path d="M4 6h16v12H4z" />
-                                  <path d="M4 10h16" />
-                                  <path d="M8 6v12" />
-                                </svg>
-                              </span>
-                              <span>
-                                <span className="block font-medium">
-                                  Seller dashboard
-                                </span>
-                                <span
-                                  className="block text-[12px]"
-                                  style={{ color: "#7A6E63" }}
-                                >
-                                  Products, sales and orders
-                                </span>
-                              </span>
+                              <User size={14} className="text-[#C9A96E]" />
+                              <span>Manage Profile</span>
                             </Link>
-                          )}
 
-                          <button
-                            type="button"
-                            onClick={handleLogoutClick}
-                            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm transition-colors hover:bg-[#f9ece8]"
-                            style={{ color: "#a12a2a" }}
-                          >
-                            <span
-                              className="flex h-9 w-9 items-center justify-center rounded-full"
-                              style={{ backgroundColor: "#f9ece8" }}
+                            <Link
+                              to="/track-order"
+                              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition-colors hover:bg-[#f4efe7] text-[#1b1c1a]"
+                              onClick={() => setIsProfileOpen(false)}
                             >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="18"
-                                height="18"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.7"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
+                              <ClipboardList size={14} className="text-[#C9A96E]" />
+                              <span>Track Orders</span>
+                            </Link>
+
+                            {user.role === "seller" && (
+                              <Link
+                                to="/seller/dashboard"
+                                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition-colors hover:bg-[#f4efe7] text-[#1b1c1a]"
+                                onClick={() => setIsProfileOpen(false)}
                               >
-                                <path d="M10 17l5-5-5-5" />
-                                <path d="M15 12H3" />
-                                <path d="M21 3v18" />
-                              </svg>
-                            </span>
-                            <span>
-                              <span className="block font-medium">Log out</span>
-                              <span
-                                className="block text-[12px]"
-                                style={{ color: "#7A6E63" }}
-                              >
-                                End your session on this device
-                              </span>
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                                <LayoutDashboard size={14} className="text-[#C9A96E]" />
+                                <span>Seller Dashboard</span>
+                              </Link>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={handleLogoutClick}
+                              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition-colors hover:bg-red-50 text-red-700 cursor-pointer"
+                            >
+                              <LogOut size={14} />
+                              <span>Log Out</span>
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                </>
-              ) : (
-                <div className="flex items-center gap-2">
+                ) : (
+                  <div className="hidden md:flex items-center gap-2">
+                    <Link
+                      to="/login"
+                      className="rounded-full border px-4 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] border-[#e4e2df] text-[#1b1c1a] hover:border-[#C9A96E] hover:text-[#C9A96E] transition-colors"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="rounded-full px-4 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] bg-[#1b1c1a] text-[#fbf9f6] hover:bg-opacity-90 transition-colors"
+                    >
+                      Sign Up
+                    </Link>
+                  </div>
+                )}
+
+                {/* Mobile hamburger icon */}
+                <button
+                  type="button"
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e4e2df] text-[#1b1c1a] lg:hidden hover:border-[#C9A96E] transition-colors cursor-pointer"
+                >
+                  {isMobileMenuOpen ? <X size={16} /> : <MenuIcon size={16} />}
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile Drawer Panel overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.35, ease: [0.76, 0, 0.24, 1] }}
+            className="fixed inset-x-0 top-[73px] z-30 bg-[#fbf9f6] border-b border-[#e4e2df] shadow-xl overflow-hidden lg:hidden"
+          >
+            <div className="px-6 py-8 space-y-6">
+              {/* Search bar on mobile */}
+              <form className="relative w-full" onSubmit={handleSearchSubmit}>
+                <div className="flex items-center gap-3 rounded-full border px-4 py-3 bg-white border-[#e4e2df]">
+                  <Search size={16} className="text-[#7A6E63]" />
+                  <input
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Search jacket, sneakers, accessories..."
+                    className="w-full bg-transparent text-xs outline-none placeholder:text-[#9c9187] text-[#1b1c1a]"
+                  />
+                </div>
+              </form>
+
+              {/* Navigation links */}
+              <div className="flex flex-col space-y-4 text-xs font-semibold uppercase tracking-[0.22em] text-[#1b1c1a] border-t border-[#e4e2df]/50 pt-6">
+                <Link to="/" className="flex items-center justify-between hover:text-[#C9A96E] transition-colors py-1">
+                  <span>New In</span>
+                  <Compass size={14} className="text-[#C9A96E]" />
+                </Link>
+                <Link to="/menu" className="flex items-center justify-between hover:text-[#C9A96E] transition-colors py-1">
+                  <span>Shop All</span>
+                  <ShoppingBag size={14} className="text-[#C9A96E]" />
+                </Link>
+                <Link to="/track-order" className="flex items-center justify-between hover:text-[#C9A96E] transition-colors py-1">
+                  <span>Track Order</span>
+                  <Truck size={14} className="text-[#C9A96E]" />
+                </Link>
+              </div>
+
+              {/* Bottom Auth button drawer */}
+              {!user && (
+                <div className="flex flex-col gap-3 pt-6 border-t border-[#e4e2df]/50">
                   <Link
                     to="/login"
-                    className="rounded-full border px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] transition-colors hover:border-[#C9A96E] hover:text-[#C9A96E]"
-                    style={{ borderColor: "#e4e2df", color: "#1b1c1a" }}
+                    className="w-full text-center rounded-full border py-3 text-[10px] font-bold uppercase tracking-[0.2em] border-[#e4e2df] text-[#1b1c1a]"
                   >
                     Sign In
                   </Link>
                   <Link
                     to="/register"
-                    className="rounded-full px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] transition-colors"
-                    style={{ backgroundColor: "#1b1c1a", color: "#fbf9f6" }}
+                    className="w-full text-center rounded-full py-3 text-[10px] font-bold uppercase tracking-[0.2em] bg-[#1b1c1a] text-[#fbf9f6]"
                   >
                     Sign Up
                   </Link>
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </div>
-    </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
