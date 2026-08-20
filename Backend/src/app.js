@@ -34,7 +34,7 @@ app.use(passport.initialize());
 
 passport.use(new GoogleStrategy({
     clientID: config.CLIENT_ID,
-    clientSecret: config.CLIENT_SECRET, 
+    clientSecret: config.CLIENT_SECRET,
     callbackURL: config.REDIRECT_URI
   },
   (accessToken, refreshToken, profile, done) => {
@@ -42,6 +42,16 @@ passport.use(new GoogleStrategy({
 }))
 
 
+
+//health route render
+
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
+});
 
 
 
