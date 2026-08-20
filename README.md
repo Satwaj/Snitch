@@ -10,7 +10,7 @@ A modern full-stack e-commerce platform inspired by Snitch, built with the MERN 
 https://snitch-nine.vercel.app
 
 ### Backend
-https://pleasant-respect-production.up.railway.app
+https://snitch-1-ytu0.onrender.com
 
 ---
 
@@ -95,7 +95,7 @@ https://pleasant-respect-production.up.railway.app
 ## Deployment
 
 - Frontend → Vercel
-- Backend → Railway
+- Backend → https://snitch-1-ytu0.onrender.com
 - Database → MongoDB Atlas
 
 ---
